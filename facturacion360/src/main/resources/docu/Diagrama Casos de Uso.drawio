@@ -1,0 +1,43 @@
+<mxfile host="Electron">
+  <diagram name="Página-1" id="mIqQ3LwL23T2KQATcLQa">
+    <mxGraphModel dx="828" dy="498" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wJPzcbwPkGD3F5aqqVPl-2" edge="1" parent="1" source="Bg0MN6LxKNgp3d6irOTa-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="Bg0MN6LxKNgp3d6irOTa-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wJPzcbwPkGD3F5aqqVPl-3" edge="1" parent="1" source="Bg0MN6LxKNgp3d6irOTa-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="Bg0MN6LxKNgp3d6irOTa-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wJPzcbwPkGD3F5aqqVPl-4" edge="1" parent="1" source="Bg0MN6LxKNgp3d6irOTa-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="Bg0MN6LxKNgp3d6irOTa-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wJPzcbwPkGD3F5aqqVPl-5" edge="1" parent="1" source="Bg0MN6LxKNgp3d6irOTa-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="Bg0MN6LxKNgp3d6irOTa-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wJPzcbwPkGD3F5aqqVPl-6" edge="1" parent="1" source="Bg0MN6LxKNgp3d6irOTa-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="Bg0MN6LxKNgp3d6irOTa-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Bg0MN6LxKNgp3d6irOTa-1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="&lt;div&gt;USUARIO&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="30" x="230" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="Bg0MN6LxKNgp3d6irOTa-3" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="A/B/M Facturas" vertex="1">
+          <mxGeometry height="30" width="120" x="400" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Bg0MN6LxKNgp3d6irOTa-4" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Buscar Facturas por Fecha" vertex="1">
+          <mxGeometry height="30" width="170" x="400" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="Bg0MN6LxKNgp3d6irOTa-5" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Enviar Factura por E-mail" vertex="1">
+          <mxGeometry height="30" width="170" x="400" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Bg0MN6LxKNgp3d6irOTa-6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="A/B/M Clientes" vertex="1">
+          <mxGeometry height="30" width="150" x="400" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="Bg0MN6LxKNgp3d6irOTa-7" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Crear QR Link Factura" vertex="1">
+          <mxGeometry height="30" width="160" x="400" y="400" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
