@@ -24,11 +24,39 @@ JavaScript **no se toca decidamos lo que decidamos**.
 
 ## 2. Qué usamos ahora (Opción A: JPA + H2)
 
+### ¿Qué es JPA? (concepto — aún no lo hemos dado en clase)
+
+En una base de datos los datos viven en **tablas y filas**. En Java trabajamos con
+**objetos**. JPA es el **"traductor" automático** entre esos dos mundos; a esa idea se le
+llama **ORM** (*Object-Relational Mapping*, mapeo objeto-relacional).
+
+Sin JPA, para leer un cliente tendrías que: escribir el `SELECT`, recorrer el resultado
+fila a fila y, a mano, ir construyendo objetos `Cliente` columna a columna. Con JPA **eso
+lo hace la librería por ti**: tú manejas objetos y ella se ocupa del SQL y de convertir
+filas ↔ objetos.
+
+Tres nombres que conviene distinguir:
+- **JPA**: el *estándar* (la "norma": un conjunto de reglas e interfaces). Por sí solo no
+  hace el trabajo.
+- **Hibernate**: la *implementación* que sí lo hace (genera el SQL y habla con la BD). Es
+  el motor que hay por debajo.
+- **Spring Data JPA**: una capa **encima** de Hibernate que nos regala repositorios ya
+  hechos (con `save`, `findAll`, paginación…) con solo declarar una interfaz.
+
+Las dos piezas clave en nuestro código:
+- **Entidad** (`@Entity` en `Cliente`): una clase Java **atada a una tabla**. Cada objeto
+  `Cliente` = una fila de `clientes`; cada campo = una columna.
+- **Repositorio** (`ClienteRepository`): una **interfaz** que Spring implementa solo. Al
+  heredar de `JpaRepository` ya tienes los métodos de acceso a datos sin escribirlos
+  (incluido `findAll(Pageable)`, que es el que resuelve la paginación).
+
+### En este proyecto
+
 - **H2**: base de datos SQL **en memoria** (vive en la RAM, se borra al apagar la app).
   No hay que instalar nada. Es solo para desarrollo/clase.
-- **Spring Data JPA (Hibernate)**: capa que mapea la clase `Cliente` a la tabla
-  `clientes` y **genera el SQL automáticamente**. Gracias a `JpaRepository` tenemos
-  `findAll(Pageable)`, que resuelve la paginación (`LIMIT/OFFSET`) sin escribir SQL.
+- **Spring Data JPA (Hibernate)**: mapea la clase `Cliente` a la tabla `clientes` y
+  **genera el SQL automáticamente**. Gracias a `JpaRepository` tenemos `findAll(Pageable)`,
+  que resuelve la paginación (`LIMIT/OFFSET`) sin escribir SQL a mano.
 
 Con JPA, este código:
 ```java
@@ -284,6 +312,20 @@ usando `repositorio.count()` (el de JPA) para el total. La entidad `Cliente` y e
 
 > Esto es una decisión **de equipo**, no del profe: afecta a cómo organizamos todas
 > nuestras partes, así que conviene acordar una misma convención entre todos.
+
+### Recordatorio: qué es un paquete y cómo se suele organizar
+
+Un **paquete** en Java es como una **carpeta que agrupa clases relacionadas**: sirve para
+ordenar el código y no tenerlo todo revuelto. Hay dos formas habituales de organizarlo:
+- **Por funcionalidad** (*feature*): todo lo de "cliente" en un mismo sitio. **Es lo que
+  tenemos ahora.**
+- **Por capas**: agrupar por su **rol técnico** → los datos (`modelo`), la lógica
+  (`service`), la web (`controller`)…
+
+Un paquete **`modelo`** agruparía las clases que representan **los datos** (la entidad y
+los DTOs): el *"qué"* maneja la aplicación, separado del *"cómo"* (lógica de negocio,
+acceso a la BD, capa web). Es la idea de separar responsabilidades que vimos en clase,
+llevada a la organización de carpetas.
 
 Ahora mismo **todo lo de clientes está en un único paquete**
 `edu.xtd.facturacion360.cliente` (patrón *"paquete por funcionalidad"*):
