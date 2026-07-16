@@ -1,0 +1,18 @@
+package edu.xtd.facturacion360.repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.springframework.jdbc.core.RowMapper;
+
+import edu.xtd.facturacion360.dto.Cliente;
+
+public class ClienteRowMapper implements RowMapper<Cliente>{
+
+	@Override
+	public Cliente mapRow(ResultSet rs, int rowNum) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}
