@@ -1,0 +1,10 @@
+HISTORIAL COMANDOS GIT
+
+operación: volver a la versión ec5f0f5
+con la última instrucción subimos los cambios y borramos los commits
+posteriores en el repositorio remoto (origin)
+
+git checkout master
+git fetch origin
+git reset --hard ec5f0f5
+git push --force-with-lease origin master
