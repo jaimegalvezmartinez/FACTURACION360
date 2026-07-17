@@ -130,3 +130,74 @@ De momento `listar-ultimos` devuelve una lista fija (los 10 últimos), **sin pag
 - **Alternativa** (solo si hay pocos clientes): traer todos con `listar-ultimos` y paginar en
   el navegador con `array.slice()`. Es más simple pero **no escala** (trae todo a memoria);
   para muchos registros, la paginación en BD (la de arriba) es la correcta.
+
+---
+
+## TODO — Mejoras de calidad (de la auditoría)
+
+Mejoras para dejar la parte más profesional. No son bloqueantes; algunas hay que **acordarlas
+con el profe** porque cambian su esqueleto.
+
+### A. Inyección por constructor (en vez de por campo)
+- **Cómo**: quitar `@Autowired` de los atributos, hacerlos `private final` y recibirlos en el
+  constructor (con un único constructor, Spring lo inyecta sin `@Autowired`):
+  ```java
+  private final ClienteService clienteService;
+  private final ClienteMapper clienteMapper;
+  public ClienteController(ClienteService s, ClienteMapper m) {
+      this.clienteService = s; this.clienteMapper = m;
+  }
+  ```
+- **Por qué es relevante**: dependencias **inmutables** (`final`) y **explícitas** (se ven en
+  el constructor), y la clase se puede **testear sin Spring** (le pasas dobles). Es la práctica
+  que recomienda el propio Spring. *(Cambia el patrón del profe → acordarlo.)*
+
+### B. Manejo de errores centralizado (`@RestControllerAdvice`)
+- **Cómo**: una clase que captura excepciones y devuelve un JSON de error uniforme:
+  ```java
+  @RestControllerAdvice
+  public class ManejadorErrores {
+      @ExceptionHandler(DataAccessException.class)
+      public ResponseEntity<String> bd(DataAccessException e) {
+          return ResponseEntity.status(500).body("Error de base de datos");
+      }
+  }
+  ```
+- **Por qué es relevante**: hoy, si MySQL falla, el cliente recibe una **traza interna fea**
+  (500 con stacktrace). Centralizarlo da respuestas **limpias y consistentes** y evita repetir
+  `try/catch` en cada endpoint.
+
+### C. Tests (`@JdbcTest` y `@WebMvcTest`)
+- **Cómo**:
+  - `@JdbcTest` para el **repositorio**: comprueba que `findUltimos` devuelve y ordena bien
+    (con una BD de test o Testcontainers).
+  - `@WebMvcTest(ClienteController.class)` + `MockMvc` y `@MockBean ClienteService` para el
+    **controller**: verifica que `GET /cliente/listar-ultimos` responde `200` y el JSON
+    correcto, **sin tocar la BD**.
+- **Por qué es relevante**: detectan roturas al refactorizar, **documentan** el comportamiento
+  esperado y aíslan cada capa. Dan nota y confianza.
+
+### D. `limite` como `@RequestParam` (quitar el número mágico)
+- **Cómo**:
+  ```java
+  @GetMapping("/listar-ultimos")
+  public ResponseEntity<List<ClienteResponse>> listarUltimos(
+          @RequestParam(defaultValue = "10") int limite) {
+      // ... clienteService.listarUltimos(limite) ...
+  }
+  ```
+- **Por qué es relevante**: **flexibilidad sin romper nada** (`/listar-ultimos` sigue dando 10;
+  `?limite=25` da 25) y evita el valor fijo "a fuego". Conviene **validar** el rango
+  (p. ej. 1–100) para que nadie pida `?limite=999999`.
+
+### E. ¿Rate limiting / filters? — decisión: por ahora **NO** (documentado a propósito)
+- **Qué son**: un **filter** (`OncePerRequestFilter`) intercepta cada petición antes del
+  controller (logging, CORS, medir tiempos, autenticación). El **rate limiting** limita cuántas
+  peticiones por minuto puede hacer una IP/usuario (para frenar abuso/DoS), normalmente con un
+  filter + una librería como **Bucket4j**, devolviendo `429 Too Many Requests` al pasarse.
+- **Por qué NO lo añadimos ahora**: esto es un proyecto **interno de clase** (CRUD de
+  facturación), **no una API pública** expuesta a Internet, así que no hay abuso del que
+  defenderse. Añadirlo sería **complejidad sin beneficio real** (principio *YAGNI*).
+- **Cuándo SÍ**: si algún día la API se publica o la consumen terceros. Entonces: un
+  `OncePerRequestFilter` + Bucket4j por IP para el rate limiting. Un filter **solo de logging/
+  tiempos** sí podría añadirse incluso ahora como "nice to have", pero tampoco es imprescindible.
