@@ -81,66 +81,86 @@ Ejemplo: si la tabla se llamara `clientes` (plural) y la columna fuera `id` en v
 
 ## TODO — Implementar la paginación correctamente
 
-De momento `listar-ultimos` devuelve una lista fija (los 10 últimos), **sin paginación**
-(así es el esqueleto del profe). Para paginar "de 10 en 10" de forma adecuada, en el
-**servidor** (la BD hace el troceado, no Java), habría que:
+De momento `listar-ultimos` devuelve una lista fija (los 10 últimos), **sin paginación** (así
+es el esqueleto del profe). Esto explica cómo se paginaría "de 10 en 10" de forma adecuada.
+
+### Idea: qué es paginar y cómo lo hace la BD
+Paginar = pedir los datos **de X en X** en vez de todos de golpe. La base de datos lo resuelve
+con dos palabras en el `SELECT`:
+- **`LIMIT n`** → "dame como mucho **n** filas" (el tamaño de página).
+- **`OFFSET m`** → "**sáltate** las primeras **m** filas".
+
+Con páginas de 10: página 0 → `LIMIT 10 OFFSET 0` (filas 1–10); página 1 → `LIMIT 10 OFFSET 10`
+(salta 10 → filas 11–20); página 2 → `OFFSET 20`… La fórmula es **`offset = pagina * tamano`**.
+Lo trocea MySQL (no Java), así que es eficiente aunque haya miles de filas.
 
 ### Backend
-1. **Repositorio** (`ClienteRepository` + `ClienteRepositoryJdbcImpl`): añadir
+1. **Repositorio** (`ClienteRepository` + `ClienteRepositoryJdbcImpl`): añadir dos métodos:
    ```java
    List<Cliente> findPagina(int limite, int offset); // SELECT ... ORDER BY id_cliente DESC LIMIT ? OFFSET ?
    long contarTotal();                               // SELECT COUNT(*) FROM cliente
    ```
-   `LIMIT` = cuántos por página; `OFFSET` = cuántos saltar (`pagina * tamano`).
+   El `COUNT(*)` hace falta para saber **cuántas páginas hay en total**; si no, no puedes saber
+   si el usuario está en la última.
 2. **DTO de página** (nuevo record en `dto/`), p. ej. `PaginaClienteResponse`:
    ```java
    record PaginaClienteResponse(
-       List<ClienteResponse> contenido,
+       List<ClienteResponse> contenido,       // los clientes de ESTA página
        int paginaActual, int totalPaginas, long totalElementos,
-       boolean hayAnterior, boolean haySiguiente) {}
+       boolean hayAnterior, boolean haySiguiente) {}  // para activar/desactivar los botones
    ```
-   No devolver estructuras internas de framework; decidir nosotros qué metadatos ve el front.
+   Enviamos también esos "metadatos" para que el frontend sepa dónde está y si puede avanzar o
+   retroceder, **sin recalcular nada** por su cuenta.
 3. **Service** (`ClienteService` + Impl): `listarPagina(int pagina, int tamano)`:
-   - `offset = pagina * tamano`.
+   - `int offset = pagina * tamano;` → cuántas filas saltar.
    - `List<Cliente> pagina = repo.findPagina(tamano, offset);`
    - `long total = repo.contarTotal();`
-   - `totalPaginas = (int) Math.ceil((double) total / tamano);`
-   - `hayAnterior = pagina > 0;`  `haySiguiente = pagina < totalPaginas - 1;`
-   - mapear a `ClienteResponse` y devolver el `PaginaClienteResponse`.
-4. **Controller**: nuevo endpoint que **no rompe** el actual:
+   - `int totalPaginas = (int) Math.ceil((double) total / tamano);` → redondeo **hacia arriba**:
+     28 clientes / 10 = 2,8 → **3** páginas (la última con 8). El `(double)` es clave: sin él, la
+     división entera daría 2 y perderías la última página.
+   - `boolean hayAnterior = pagina > 0;` → hay anterior salvo en la página 0.
+   - `boolean haySiguiente = pagina < totalPaginas - 1;` → hay siguiente salvo en la última.
+   - mapear los `Cliente` a `ClienteResponse` y devolver el `PaginaClienteResponse`.
+4. **Controller**: un endpoint NUEVO (no rompe `listar-ultimos`):
    ```java
    @GetMapping("/listar")
    public ResponseEntity<PaginaClienteResponse> listar(
            @RequestParam(defaultValue = "0") int pagina,
            @RequestParam(defaultValue = "10") int tamano) { ... }
    ```
+   `@RequestParam` lee `?pagina=1&tamano=10` de la URL; con `defaultValue` funciona aunque no se
+   manden.
 
 ### Frontend (`clientes.js` + `clientes.html`)
-5. Recuperar en el HTML la **barra de paginación** (dos botones "Más recientes / Más
-   antiguos" + un texto de estado) que se quitó al simplificar.
-6. En el JS: guardar `paginaActual`, hacer `fetch('/cliente/listar?pagina=' + p + '&tamano=10')`,
-   pintar filas y **activar/desactivar los botones** según `hayAnterior`/`haySiguiente`.
+5. Recuperar en el HTML la **barra de paginación** (botones "Más recientes / Más antiguos" + un
+   texto tipo "Página 2 de 3") que quitamos al simplificar.
+6. En el JS: guardar la `paginaActual`, hacer `fetch('/cliente/listar?pagina=' + p + '&tamano=10')`,
+   pintar las filas y **desactivar** el botón "anterior" si `!hayAnterior` y el "siguiente" si
+   `!haySiguiente`. Así el usuario nunca se sale del rango.
 
 ### Notas importantes
-- Mantener **siempre el mismo `ORDER BY id_cliente DESC`**: sin orden estable, la paginación
-  puede repetir o saltarse filas entre páginas.
-- Cubrir **casos borde**: 0 resultados, última página incompleta, página fuera de rango.
-- Esto **amplía la interfaz del profe** (métodos nuevos en el repositorio): conviene
-  **acordarlo con él** antes de tocar sus interfaces.
-- **Alternativa** (solo si hay pocos clientes): traer todos con `listar-ultimos` y paginar en
-  el navegador con `array.slice()`. Es más simple pero **no escala** (trae todo a memoria);
-  para muchos registros, la paginación en BD (la de arriba) es la correcta.
+- Mantener **siempre el mismo `ORDER BY id_cliente DESC`**: la BD no garantiza un orden fijo si
+  no se lo pides, y sin orden estable la paginación puede **repetir o saltarse** filas entre páginas.
+- Cubrir **casos borde**: 0 resultados, última página incompleta, o una página fuera de rango.
+- Esto **amplía la interfaz del profe** (métodos nuevos en el repositorio): **acordarlo con él**
+  antes de tocar sus interfaces.
+- **Alternativa** (solo si hay muy pocos clientes): traerlos todos y paginar en el navegador con
+  `array.slice()`. Más simple, pero **no escala** (carga todo en memoria); con muchos registros la
+  paginación en BD es la correcta.
 
 ---
 
 ## TODO — Mejoras de calidad (de la auditoría)
 
-Mejoras para dejar la parte más profesional. No son bloqueantes; algunas hay que **acordarlas
-con el profe** porque cambian su esqueleto.
+Mejoras para dejar la parte más profesional. Aunque quizá no las implementemos, conviene
+**entenderlas**. Algunas **cambian el esqueleto del profe**, así que habría que acordarlas con él.
 
 ### A. Inyección por constructor (en vez de por campo)
-- **Cómo**: quitar `@Autowired` de los atributos, hacerlos `private final` y recibirlos en el
-  constructor (con un único constructor, Spring lo inyecta sin `@Autowired`):
+**Concepto**: "inyección de dependencias" = en vez de crear tú los objetos que necesitas
+(`new ClienteService()`), Spring te los da ya creados. Hoy los recibimos en un atributo marcado
+con `@Autowired` (**inyección por campo**); la alternativa es recibirlos por el **constructor**.
+- **Cómo**: atributos `private final` y un constructor que los recibe (con un solo constructor,
+  Spring lo inyecta sin `@Autowired`):
   ```java
   private final ClienteService clienteService;
   private final ClienteMapper clienteMapper;
@@ -148,36 +168,47 @@ con el profe** porque cambian su esqueleto.
       this.clienteService = s; this.clienteMapper = m;
   }
   ```
-- **Por qué es relevante**: dependencias **inmutables** (`final`) y **explícitas** (se ven en
-  el constructor), y la clase se puede **testear sin Spring** (le pasas dobles). Es la práctica
-  que recomienda el propio Spring. *(Cambia el patrón del profe → acordarlo.)*
+- **Por qué es mejor**: los campos pueden ser `final` (**inmutables**, nadie los cambia por
+  error); las dependencias quedan **a la vista** en el constructor (con inyección por campo están
+  "escondidas"); y puedes **testear la clase sin arrancar Spring**, pasándole dobles de prueba por
+  el constructor. Es la práctica que recomienda el propio Spring. *(Cambia el patrón del profe →
+  acordarlo.)*
 
 ### B. Manejo de errores centralizado (`@RestControllerAdvice`)
-- **Cómo**: una clase que captura excepciones y devuelve un JSON de error uniforme:
+**Concepto**: cuando un endpoint lanza una excepción, Spring puede **desviarla** a una clase
+"guardiana" que decide qué responder, en vez de soltar el error por defecto. Es como un `catch`
+global para todos los controllers.
+- **Cómo**: una clase con métodos `@ExceptionHandler`, uno por tipo de error:
   ```java
   @RestControllerAdvice
   public class ManejadorErrores {
-      @ExceptionHandler(DataAccessException.class)
+      @ExceptionHandler(DataAccessException.class)   // errores de BD
       public ResponseEntity<String> bd(DataAccessException e) {
           return ResponseEntity.status(500).body("Error de base de datos");
       }
   }
   ```
-- **Por qué es relevante**: hoy, si MySQL falla, el cliente recibe una **traza interna fea**
-  (500 con stacktrace). Centralizarlo da respuestas **limpias y consistentes** y evita repetir
-  `try/catch` en cada endpoint.
+- **Por qué es relevante**: hoy, si MySQL falla, el navegador recibe una **traza interna fea**
+  (con detalles que no deberían salir). Con esto das respuestas **limpias y uniformes** y no
+  repites `try/catch` en cada endpoint.
 
-### C. Tests (`@JdbcTest` y `@WebMvcTest`)
+### C. Tests automáticos (`@JdbcTest` y `@WebMvcTest`)
+**Concepto**: un test es código que **comprueba solo** que otro código hace lo que debe. Spring
+permite probar **una capa aislada** sin levantar toda la app. Un "mock" (o doble) es un objeto
+falso que simula a otro para no depender de él (p. ej. simular el service para probar el
+controller sin BD).
 - **Cómo**:
-  - `@JdbcTest` para el **repositorio**: comprueba que `findUltimos` devuelve y ordena bien
-    (con una BD de test o Testcontainers).
-  - `@WebMvcTest(ClienteController.class)` + `MockMvc` y `@MockBean ClienteService` para el
-    **controller**: verifica que `GET /cliente/listar-ultimos` responde `200` y el JSON
-    correcto, **sin tocar la BD**.
-- **Por qué es relevante**: detectan roturas al refactorizar, **documentan** el comportamiento
-  esperado y aíslan cada capa. Dan nota y confianza.
+  - `@JdbcTest` para el **repositorio**: arranca solo lo justo para la BD y comprueba que
+    `findUltimos` devuelve y ordena bien (con una BD de test o Testcontainers).
+  - `@WebMvcTest(ClienteController.class)` + `MockMvc`: levanta **solo la capa web** y simula
+    peticiones HTTP; con `@MockBean ClienteService` sustituyes el service por un doble, así
+    pruebas que `GET /cliente/listar-ultimos` responde `200` y el JSON correcto **sin tocar la BD**.
+- **Por qué es relevante**: detectan roturas al cambiar código, **documentan** el comportamiento
+  esperado y aíslan cada capa. Dan confianza (y nota).
 
-### D. `limite` como `@RequestParam` (quitar el número mágico)
+### D. `limite` como `@RequestParam` (quitar el "número mágico")
+**Concepto**: un "número mágico" es un valor fijo escrito en el código (aquí, el `10`) que no se
+puede cambiar desde fuera. Con `@RequestParam` ese valor llega por la URL.
 - **Cómo**:
   ```java
   @GetMapping("/listar-ultimos")
@@ -187,17 +218,18 @@ con el profe** porque cambian su esqueleto.
   }
   ```
 - **Por qué es relevante**: **flexibilidad sin romper nada** (`/listar-ultimos` sigue dando 10;
-  `?limite=25` da 25) y evita el valor fijo "a fuego". Conviene **validar** el rango
-  (p. ej. 1–100) para que nadie pida `?limite=999999`.
+  `?limite=25` da 25). Conviene **validar** el rango (p. ej. 1–100) para que nadie pida
+  `?limite=999999` y sature la BD.
 
 ### E. ¿Rate limiting / filters? — decisión: por ahora **NO** (documentado a propósito)
-- **Qué son**: un **filter** (`OncePerRequestFilter`) intercepta cada petición antes del
-  controller (logging, CORS, medir tiempos, autenticación). El **rate limiting** limita cuántas
-  peticiones por minuto puede hacer una IP/usuario (para frenar abuso/DoS), normalmente con un
-  filter + una librería como **Bucket4j**, devolviendo `429 Too Many Requests` al pasarse.
-- **Por qué NO lo añadimos ahora**: esto es un proyecto **interno de clase** (CRUD de
-  facturación), **no una API pública** expuesta a Internet, así que no hay abuso del que
-  defenderse. Añadirlo sería **complejidad sin beneficio real** (principio *YAGNI*).
-- **Cuándo SÍ**: si algún día la API se publica o la consumen terceros. Entonces: un
-  `OncePerRequestFilter` + Bucket4j por IP para el rate limiting. Un filter **solo de logging/
-  tiempos** sí podría añadirse incluso ahora como "nice to have", pero tampoco es imprescindible.
+**Concepto**: un **filter** es una "aduana" por la que pasa **toda** petición antes de llegar al
+controller; sirve para cosas transversales (logging, medir tiempos, CORS, autenticación). El
+**rate limiting** es un caso concreto: contar peticiones por IP/usuario y **cortar** (devolver
+`429 Too Many Requests`) si se pasan de un límite, para frenar abusos o ataques de denegación (DoS).
+- **Cómo (si hiciera falta)**: un `OncePerRequestFilter` + una librería como **Bucket4j** que
+  lleva la cuenta por IP.
+- **Por qué NO ahora**: es un proyecto **interno de clase**, **no una API pública** en Internet,
+  así que no hay abuso del que defenderse → sería **complejidad sin beneficio** (principio *YAGNI*:
+  "no lo implementes hasta que de verdad haga falta").
+- **Cuándo SÍ**: si la API se publicara o la usaran terceros. Un filter **solo de logging/tiempos**
+  sí podría añadirse ya como "nice to have", pero tampoco es imprescindible.
