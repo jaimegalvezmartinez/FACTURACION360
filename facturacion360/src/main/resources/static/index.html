@@ -8,52 +8,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+   <link rel="icon" href="./img/fav.ico" type="image/png">
 </head>
 <body>
 
-  <nav class="navbar navbar-expand-lg">
-    <div class="container">
-        
-        <!-- Nombre de la marca / Logo texto a la izquierda -->
-        <a class="navbar-brand" href="index.html">Facturación</a>
+<nav class="navbar">
+  <div class="container"> <a class="navbar-brand" href="index.html">
+      <img src="./img/finanzas.png" alt="Logo de Facturación 360" class="logo me-2">
+      Facturación 360
+    </a>
 
-        <!-- Botón de menú hamburguesa para móviles -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <ul class="navbar-nav">
+      <li><a class="nav-link active" href="index.html">Inicio</a></li>
+      <li><a class="nav-link" href="clientes.html">Clientes</a></li>
+      <li><a class="nav-link" href="facturas.html">Facturas</a></li>
+    </ul>
 
-        <!-- Contenedor de enlaces e icono derecho (Colapsable en móviles) -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-            
-            <!-- Enlaces de navegación -->
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="index.html">Inicio</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="clientes.html">Clientes</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="facturas.html">Facturas</a>
-                </li>
-            </ul>
-
-            <!-- NUEVO: Logo de factura alineado a la derecha -->
-            <div class="ms-auto d-flex align-items-center">
-                <img src="img/logoFactura.png" alt="Logo Factura" class="navbar-logo-derecha">
-            </div>
-            
-        </div>
-    </div>
+  </div>
 </nav>
+
     <header class="hero">
       
     </header>
 
 <main class="container main-wrapper">
     <div class="feature-card">
-        <!-- Nueva imagen añadida -->
-        <img src="img/fondoInicio.webp" alt="Bienvenido al Sistema de Facturación" class="imagen-inicio">
+        <!-- Imagen añadida con una clase para controlarla fácilmente desde el CSS -->
+        <img src="./img/facturacion 360.png" alt="Ilustración de sistema de facturación VeriFactu" class="feature-img mb-3">
         
         <h3>Sistema de Facturación</h3>
         <p>Selecciona una opción del menú superior para comenzar</p>

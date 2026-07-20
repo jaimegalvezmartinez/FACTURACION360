@@ -8,46 +8,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="./img/fav.ico" type="image/png">
     <!-- defer: descarga en paralelo con el parseo del HTML y se ejecuta cuando el
          DOM ya está listo, así que no hace falta DOMContentLoaded. -->
     <script src="clientes.js" defer></script>
 </head>
 <body>
 
-   <nav class="navbar navbar-expand-lg">
-    <div class="container">
-        
-        <!-- Nombre de la marca / Logo texto a la izquierda -->
-        <a class="navbar-brand" href="index.html">Facturación</a>
+<nav class="navbar">
+  <div class="container"> <a class="navbar-brand" href="index.html">
+      <img src="./img/finanzas.png" alt="Logo de Facturación 360" class="logo me-2">
+      Facturación 360
+    </a>
 
-        <!-- Botón de menú hamburguesa para móviles -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <ul class="navbar-nav">
+      <li><a class="nav-link active" href="index.html">Inicio</a></li>
+      <li><a class="nav-link" href="clientes.html">Clientes</a></li>
+      <li><a class="nav-link" href="facturas.html">Facturas</a></li>
+    </ul>
 
-        <!-- Contenedor de enlaces e icono derecho (Colapsable en móviles) -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-            
-            <!-- Enlaces de navegación -->
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="index.html">Inicio</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="clientes.html">Clientes</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="facturas.html">Facturas</a>
-                </li>
-            </ul>
-
-            <!-- NUEVO: Logo de factura alineado a la derecha -->
-            <div class="ms-auto d-flex align-items-center">
-                <img src="img/logoFactura.png" alt="Logo Factura" class="navbar-logo-derecha">
-            </div>
-            
-        </div>
-    </div>
+  </div>
 </nav>
 
     <main class="container py-5">
@@ -56,6 +36,7 @@
             <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#clienteModal">Añadir Cliente</button>
         </div>
 
+      
         <!-- Buscador de clientes. NOTA: aún NO es funcional; la lógica de búsqueda
              la implementará otro compañero. De momento es solo la interfaz. -->
         <div class="buscador-clientes mb-4">
@@ -64,7 +45,6 @@
                    placeholder="Buscar por nombre, CIF, email, teléfono o dirección..."
                    aria-label="Buscar cliente">
         </div>
-
         <!--
             CORRECCION: el div.table-responsive envuelve UNICAMENTE la tabla y
             se cierra justo despues de cerrarla (uso correcto de Bootstrap: solo
@@ -89,6 +69,19 @@
                 <tbody id="tabla-clientes"></tbody>
             </table>
         </div>
+
+        <!-- Paginación: clientes.js activa/desactiva los botones según la página.
+             aria-live="polite" hace que un lector de pantalla anuncie el cambio. -->
+        <nav aria-label="Paginación de clientes"
+             class="d-flex justify-content-between align-items-center mt-3">
+            <button id="btn-recientes" type="button" class="btn btn-outline-secondary" disabled>
+                <i class="fa-solid fa-chevron-left"></i> Más recientes
+            </button>
+            <span id="info-pagina" class="text-muted" aria-live="polite"></span>
+            <button id="btn-antiguos" type="button" class="btn btn-outline-secondary">
+                Más antiguos <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </nav>
 
         <!-- Plantilla oculta: su contenido NO se renderiza hasta que JS lo clona.
              Puede vivir en cualquier punto del documento; lo dejamos junto a la

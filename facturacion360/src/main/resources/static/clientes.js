@@ -50,6 +50,7 @@ function pintarFilas(clientes) {
         return;
     }
 
+	
     for (const cliente of clientes) {
         // Clonamos el contenido del template (un <tr> completo con sus <td>).
         const fila = plantillaFila.content.cloneNode(true);
@@ -133,6 +134,9 @@ botonAnadirCliente.addEventListener('click', () => {
     formularioCliente.reset();
   }
 });
+
+
+// Buscador
 const contenedorBuscador = document.querySelector('.buscador-clientes');
 const inputBuscador = document.getElementById('buscador-clientes');
 
