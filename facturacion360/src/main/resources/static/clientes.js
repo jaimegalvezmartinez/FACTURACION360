@@ -133,6 +133,21 @@ botonAnadirCliente.addEventListener('click', () => {
     formularioCliente.reset();
   }
 });
-;
+const contenedorBuscador = document.querySelector('.buscador-clientes');
+const inputBuscador = document.getElementById('buscador-clientes');
+
+document.addEventListener('click', (evento) => {
+    // Verificamos si el clic ocurrió DENTRO del contenedor del buscador
+    if (contenedorBuscador.contains(evento.target)) {
+        // Expandimos y ponemos el cursor dentro
+        contenedorBuscador.classList.add('expandido');
+        inputBuscador.focus();
+    } else {
+        // Si hizo clic FUERA, verificamos si el input está vacío antes de cerrarlo
+        if (inputBuscador.value.trim() === '') {
+            contenedorBuscador.classList.remove('expandido');
+        }
+    }
+});
 
 

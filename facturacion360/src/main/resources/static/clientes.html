@@ -14,22 +14,41 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top" aria-label="Navegación principal">
-        <div class="container">
-            <!-- Logo a la izquierda (por defecto) -->
-            <a class="navbar-brand" href="index.html">Facturación 360</a>
+   <nav class="navbar navbar-expand-lg">
+    <div class="container">
+        
+        <!-- Nombre de la marca / Logo texto a la izquierda -->
+        <a class="navbar-brand" href="index.html">Facturación</a>
 
-            <!-- Esta clase permite que el contenido se colapse y se alinee -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- ms-auto empuja este div completamente a la derecha -->
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="index.html">Inicio</a>
-                    <a class="nav-link active" href="clientes.html">Clientes</a>
+        <!-- Botón de menú hamburguesa para móviles -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Contenedor de enlaces e icono derecho (Colapsable en móviles) -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            
+            <!-- Enlaces de navegación -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="index.html">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="clientes.html">Clientes</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="facturas.html">Facturas</a>
-                </div>
+                </li>
+            </ul>
+
+            <!-- NUEVO: Logo de factura alineado a la derecha -->
+            <div class="ms-auto d-flex align-items-center">
+                <img src="img/logoFactura.png" alt="Logo Factura" class="navbar-logo-derecha">
             </div>
+            
         </div>
-    </nav>
+    </div>
+</nav>
 
     <main class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
