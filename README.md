@@ -3,7 +3,7 @@
 Muestra en la tabla de `clientes.html` **los últimos clientes**
 dados de alta, pidiéndolos al backend por `fetch`.
 Está hecha con **JDBC Template + MySQL**,
-siguiendo la arquitectura por capas que subió el Val a `master`.
+siguiendo la arquitectura por capas que subió Val a `master`.
 
 ## Qué hace
 
@@ -80,6 +80,18 @@ troceado lo hace MySQL. Las piezas:
 - **Controller `listarPagina`**: mismo patrón (validación, logs, `try/catch`); devuelve el `PaginaClienteResponse`.
 - **`clientes.js`**: guarda la `paginaActual`, pide `/cliente/listar-pagina?pagina=&tamano=10`, pinta
   `datos.contenido` y **activa/desactiva** los botones "Más recientes"/"Más antiguos" según los flags.
+
+### Refresco automático tras cambios
+
+Cuando se crea, edita o elimina un cliente, la tabla debe reflejarlo. Lo resolvemos con un **evento
+personalizado**, para **desacoplar** nuestra parte de la de los compañeros: `clientes.js` **escucha**
+el evento `clientes:cambiaron` y, al recibirlo, **recarga la página actual** (`cargarClientes(paginaActual)`),
+volviendo a pedir los datos a la BD. Así nuestra tabla siempre está al día sin conocer el código de
+quien hace el cambio (ellos solo tienen que **disparar** el evento — ver la última sección).
+
+Optamos por **re-fetch** (volver a pedir) en vez de tocar el DOM a mano: es más simple y garantiza que
+la tabla coincide con la BD. Y descartamos **caché** a propósito: con datos que cambian, un caché
+serviría datos viejos (lo contrario de lo que queremos) y habría que invalidarlo en cada cambio.
 
 ## Logs y manejo de errores
 
@@ -224,4 +236,31 @@ puede cambiar desde fuera. Con `@RequestParam` ese valor llega por la URL.
   `?limite=25` da 25). El valor se **acota a 1–100** para que nadie pida `?limite=999999` y sature
   la BD. *(Alternativa más "REST": `@Validated` + `@Min/@Max` devolviendo `400`, pero necesita el
   manejador de errores del TODO B; por eso de momento acotamos.)*
+
+---
+
+## Para los compañeros: avisar cuando cambie un cliente
+
+**¿Tenéis que tocar vuestro código? Sí, una sola línea.** Nuestra tabla se refresca sola, pero
+necesita que le **aviséis** cuando un cliente cambie. **Justo después de que vuestro `fetch` de
+crear, editar o eliminar responda con éxito (2xx)**, disparad este evento:
+
+```js
+document.dispatchEvent(new CustomEvent('clientes:cambiaron'));
+```
+
+Ejemplo (eliminar):
+```js
+async function eliminarCliente(id) {
+    const respuesta = await fetch(`/cliente/${id}`, { method: 'DELETE' });
+    if (respuesta.ok) {
+        document.dispatchEvent(new CustomEvent('clientes:cambiaron')); // <-- la tabla se recarga sola
+    }
+}
+```
+
+Notas:
+- **No hay que pasar datos** en el evento ni conocer nuestras funciones: basta con dispararlo.
+- Nosotros recargamos la **página actual**. Si al **crear** queréis que el cliente nuevo se vea al
+  instante (aparece el primero, en la página 0), llevad además al usuario a esa primera página.
 

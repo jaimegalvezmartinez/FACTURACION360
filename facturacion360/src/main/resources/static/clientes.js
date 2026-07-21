@@ -115,6 +115,12 @@ function mostrarError(error) {
 btnRecientes.addEventListener("click", () => cargarClientes(paginaActual - 1));
 btnAntiguos.addEventListener("click", () => cargarClientes(paginaActual + 1));
 
+// --- Refresco automático tras crear/editar/eliminar ---
+// Cuando otro compañero cambie un cliente, avisa disparando este evento y recargamos la
+// página actual (así la tabla siempre refleja la BD, sin que su código conozca el nuestro).
+// Ellos solo hacen: document.dispatchEvent(new CustomEvent('clientes:cambiaron'));
+document.addEventListener("clientes:cambiaron", () => cargarClientes(paginaActual));
+
 // Carga inicial: la primera página (los 10 más recientes).
 cargarClientes(0);
 
