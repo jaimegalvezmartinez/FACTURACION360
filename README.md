@@ -51,6 +51,26 @@ Navegador ←──────── JSON ─── ClienteResponse ←(Mapper)
    `<template>` de la tabla rellenándolo con `textContent` (seguro frente a `<`/`&`). El
    **buscador** de arriba se ve pero **aún no funciona** (su lógica es de otro compañero).
 
+## Logs y manejo de errores
+
+Usamos **SLF4J** (`private static final Logger log = LoggerFactory.getLogger(...)`), que escribe
+al log configurado en `logback-spring.xml` y permite **niveles**. Ponemos **un log por capa**, con
+la granularidad adecuada:
+
+- **Repositorio** (`findUltimos`): `log.debug("findUltimos({}) -> {} filas", ...)` — nivel `DEBUG`
+  porque es detalle técnico de la consulta.
+- **Servicio** (`listarUltimos`): `log.info("listarUltimos({}) -> {} clientes", ...)`.
+- **Controller** (`listarUltimos`): `log.info(...)` al recibir la petición (con el `limite`) y al
+  responder (con el nº de clientes).
+- **RowMapper**: **sin log a propósito** — se ejecuta una vez por CADA fila y llenaría la consola.
+
+Fíjate que para poder loguear el valor **primero lo guardamos en una variable y luego lo
+devolvemos** (ver ["Decisiones de estilo"](#a-decisiones-de-estilo-inyección-de-dependencias-y-forma-del-return)).
+
+**Errores**: el controller envuelve la operación en `try/catch (DataAccessException)`. Si la BD
+falla, `log.error("...", e)` deja el fallo (con su traza) **en el log**, y al navegador le
+respondemos un **`500`** limpio (cuerpo vacío) en vez de soltarle una traza interna.
+
 ## Base de datos
 
 La app se conecta a `jdbc:mysql://localhost:3306/bd_facturacion` (root/root, en
@@ -152,24 +172,43 @@ Lo trocea MySQL (no Java), así que es eficiente aunque haya miles de filas.
 Mejoras para dejar la parte más profesional. Aunque quizá no las implementemos, conviene
 **entenderlas**. Algunas **cambian el esqueleto del profe**, así que habría que acordarlas con él.
 
-### A. Inyección por constructor (en vez de por campo)
-**Concepto**: "inyección de dependencias" = en vez de crear tú los objetos que necesitas
-(`new ClienteService()`), Spring te los da ya creados. Hoy los recibimos en un atributo marcado
-con `@Autowired` (**inyección por campo**); la alternativa es recibirlos por el **constructor**.
-- **Cómo**: atributos `private final` y un constructor que los recibe (con un solo constructor,
-  Spring lo inyecta sin `@Autowired`):
-  ```java
-  private final ClienteService clienteService;
-  private final ClienteMapper clienteMapper;
-  public ClienteController(ClienteService s, ClienteMapper m) {
-      this.clienteService = s; this.clienteMapper = m;
-  }
-  ```
-- **Por qué es mejor**: los campos pueden ser `final` (**inmutables**, nadie los cambia por
-  error); las dependencias quedan **a la vista** en el constructor (con inyección por campo están
-  "escondidas"); y puedes **testear la clase sin arrancar Spring**, pasándole dobles de prueba por
-  el constructor. Es la práctica que recomienda el propio Spring. *(Cambia el patrón del profe →
-  acordarlo.)*
+### A. Decisiones de estilo: inyección de dependencias y forma del `return`
+
+Dos elecciones de estilo de nuestra parte. **No hay una única "correcta"**: cada una tiene pros y
+contras, así que las dejamos razonadas.
+
+**1) Inyección de dependencias: `@Autowired` en el campo (lo que usamos) vs. por constructor.**
+La "inyección" es que Spring te da los objetos ya creados en vez de hacer tú `new`. Se puede
+recibir en el **atributo** o en el **constructor**:
+
+| | `@Autowired` en campo *(actual, patrón del profe)* | Por constructor *(`private final` + constructor)* |
+|---|---|---|
+| **Pros** | Menos código, muy directo. | Campos `final` (**inmutables**); dependencias **a la vista**; **testeable sin Spring** (le pasas dobles). |
+| **Contras** | El campo **no puede ser `final`** (mutable); dependencias "ocultas"; testear necesita Spring o reflexión. | Un poco más de código; **cambia el patrón del profe**. |
+
+```java
+// por constructor:
+private final ClienteService clienteService;
+public ClienteController(ClienteService s) { this.clienteService = s; }
+```
+> **Decisión**: mantenemos **inyección por campo** para seguir el patrón del profe. Migrar a
+> constructor sería trivial si se acuerda con él.
+
+**2) Forma del `return`: guardar en variable (patrón del profe, lo que usamos) vs. `return` directo.**
+
+| | Variable → log → `return` *(actual)* | `return` directo *(como lo teníamos antes)* |
+|---|---|---|
+| **Pros** | Puedes **inspeccionar y loguear** el valor antes de devolverlo; en el depurador pones un breakpoint en el `return` y **ves la variable**; encaja con logs y `try/catch`. | Más corto y conciso. |
+| **Contras** | Un poco más verboso. | **No puedes ver ni loguear** el valor sin partir la expresión; **depurar es más incómodo** (no hay variable donde mirar). |
+
+```java
+// actual (variable):                antes (directo):
+List<Cliente> c = repo.findUltimos(l);   return repo.findUltimos(l);
+log.debug("-> {}", c.size());
+return c;
+```
+> **Decisión**: usamos el patrón del profe (variable) sobre todo porque **facilita el log y el
+> depurado** (poder mirar el valor justo antes de devolverlo).
 
 ### B. Manejo de errores centralizado (`@RestControllerAdvice`)
 **Concepto**: cuando un endpoint lanza una excepción, Spring puede **desviarla** a una clase
