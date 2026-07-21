@@ -15,22 +15,27 @@ public class ClienteMapper {
 		return null;
 	}
 
-	// Cliente (dominio) -> ClienteResponse (lo que viaja al navegador como JSON).
+	
 	public ClienteResponse toResponse (Cliente cliente)
 	{
-		if (cliente == null) {
-			return null;
-		}
-		return new ClienteResponse(
-				cliente.idCliente(),
-				cliente.nombre(),
-				cliente.nifCif(),
-				cliente.direccion(),
-				cliente.codigoPostal(),
-				cliente.poblacion(),
-				cliente.provincia(),
-				cliente.telefono(),
-				cliente.email(),
-				cliente.fechaAlta());
+		ClienteResponse clienteResponse = null;
+		
+			if (cliente!=null)
+			{
+				clienteResponse = new ClienteResponse(
+						cliente.idCliente(),
+						cliente.nombre(),
+						cliente.nifCif(),
+						cliente.direccion(),
+						cliente.codigoPostal(),
+						cliente.poblacion(),
+						cliente.provincia(),
+						cliente.telefono(),
+						cliente.email(),
+						cliente.fechaAlta());
+			}
+			System.out.println("Cliente2ClienteResponse " + clienteResponse);
+		
+		return clienteResponse;
 	}
 }
