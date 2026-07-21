@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.server.ResponseStatusException;
 
 import edu.xtd.facturacion360.dto.Cliente;
 
@@ -47,13 +49,19 @@ public class ClienteRepositoryJdbcImpl implements ClienteRepository {
 	public boolean deleteById(int id) {
 		boolean borrarOk = false;
 		String instruccionBorrar = "DELETE FROM clientes where idcliente = ?;";
+
+		int filasborradas = jdbcTemplate.update(instruccionBorrar, id);
+		if (filasborradas == 1) {
+			borrarOk = true;
+		} 
 		
-			int filasborradas = jdbcTemplate.update(instruccionBorrar, id);
-			if (filasborradas == 1) {
-				borrarOk = true;
-			}
-
 		return borrarOk;
+		/**
+	     * Ejecuta la sentencia SQL para borrar un cliente de la base de datos según su ID.
+	     * 
+	     * @param id El identificador del cliente a eliminar.
+	     * @return true si se eliminó exactamente una fila (borrado exitoso), 
+	     *         false si no se eliminó ninguna fila (el cliente no existía).
+	     */
 	}
-
 }
