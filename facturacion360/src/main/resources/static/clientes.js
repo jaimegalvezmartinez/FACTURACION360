@@ -28,7 +28,10 @@ const infoPagina = document.getElementById("info-pagina");
 // Único estado que guardamos entre clics: en qué página estamos.
 let paginaActual = 0;
 
-/** Pide una página de clientes al backend y repinta tabla + botones. */
+/**
+ * Pide una página de clientes al backend y repinta la tabla y los botones.
+ * @param {number} pagina índice de la página a cargar (empieza en 0)
+ */
 async function cargarClientes(pagina) {
     try {
         const respuesta = await fetch(`${API_LISTAR_PAGINA}?pagina=${pagina}&tamano=${TAMANO_PAGINA}`);

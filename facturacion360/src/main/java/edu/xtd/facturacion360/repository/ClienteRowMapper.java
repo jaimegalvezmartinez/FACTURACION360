@@ -17,6 +17,15 @@ import edu.xtd.facturacion360.dto.Cliente;
 @Component
 public class ClienteRowMapper implements RowMapper<Cliente>{
 
+	/**
+	 * Convierte la fila ACTUAL del {@link ResultSet} en un objeto {@link Cliente}.
+	 * Spring lo llama automáticamente una vez por cada fila del resultado.
+	 *
+	 * @param rs     el ResultSet posicionado en la fila a convertir (de él leemos las columnas)
+	 * @param rowNum el número de fila (0, 1, 2…); aquí no lo usamos
+	 * @return el {@link Cliente} construido con los datos de esa fila
+	 * @throws SQLException si falla el acceso a alguna columna del ResultSet
+	 */
 	@Override
 	public Cliente mapRow(ResultSet rs, int rowNum) throws SQLException {
 		// Spring llama a este método UNA VEZ POR CADA FILA del ResultSet. Leemos cada

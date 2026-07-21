@@ -44,7 +44,10 @@ public class ClienteServiceImpl implements ClienteService{
 		// es clave: sin él la división entera daría 2 y perderías la última página.
 		int totalPaginas = (int) Math.ceil((double) total / tamano);
 
-		// Traducimos los Cliente de dominio a ClienteResponse (lo que ve el navegador).
+		// Traducimos cada Cliente (dominio) a ClienteResponse con la API de Streams: stream() abre
+		// el flujo, map(clienteMapper::toResponse) transforma cada elemento (clienteMapper::toResponse
+		// es una referencia a método = la lambda c -> clienteMapper.toResponse(c)) y toList() recoge
+		// el resultado en una List nueva.
 		List<ClienteResponse> contenido = clientes.stream().map(clienteMapper::toResponse).toList();
 
 		boolean hayAnterior  = pagina > 0;                   // hay anterior salvo en la página 0

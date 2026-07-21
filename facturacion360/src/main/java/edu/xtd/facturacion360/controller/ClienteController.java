@@ -58,7 +58,11 @@ public class ClienteController {
 
 	/**
 	 * Devuelve los últimos clientes dados de alta (por defecto 10) como JSON.
-	 * El número se puede pedir por la URL: /cliente/listar-ultimos?limite=25
+	 * Ejemplo de uso: {@code GET /cliente/listar-ultimos?limite=25}
+	 *
+	 * @param limite cuántos clientes devolver; llega por la URL (?limite=). Si no se manda, vale 10
+	 *               (defaultValue). Se acota internamente al rango [1, 100].
+	 * @return {@code 200 OK} con la lista de {@link ClienteResponse}; o {@code 500} si falla la BD.
 	 */
 	@GetMapping("/listar-ultimos")
 	public ResponseEntity<List<ClienteResponse>> listarUltimos(
@@ -77,7 +81,13 @@ public class ClienteController {
 			// 1) Pedimos al service los últimos clientes (objetos de dominio).
 			List<Cliente> ultimos = clienteService.listarUltimos(limiteSeguro);
 
-			// 2) Los traducimos a ClienteResponse (lo que viaja al navegador).
+			// 2) Traducimos la List<Cliente> (dominio) a List<ClienteResponse> (lo que viaja al
+			//    navegador) usando la API de Streams de Java:
+			//      - stream():  abre un "flujo" para recorrer la lista de forma declarativa.
+			//      - map(fn):   aplica la función 'fn' a CADA elemento y produce uno nuevo.
+			//      - clienteMapper::toResponse es una REFERENCIA A MÉTODO: atajo de la lambda
+			//        (cliente) -> clienteMapper.toResponse(cliente).
+			//      - toList():  recoge los resultados en una List<ClienteResponse> nueva.
 			List<ClienteResponse> respuesta = ultimos.stream()
 					.map(clienteMapper::toResponse)
 					.toList();
@@ -95,9 +105,16 @@ public class ClienteController {
 	}
 
 	/**
-	 * Devuelve una PÁGINA de clientes (para la paginación de la tabla).
-	 * URL: /cliente/listar-pagina?pagina=0&tamano=10  (los dos parámetros son opcionales).
-	 * No toca a listar-ultimos; es un endpoint aparte.
+	 * Devuelve una PÁGINA de clientes (para la paginación de la tabla). No toca a
+	 * {@link #listarUltimos(int)}; es un endpoint aparte.
+	 * Ejemplo de uso: {@code GET /cliente/listar-pagina?pagina=0&tamano=10}
+	 *
+	 * @param pagina índice de la página empezando en 0; llega por la URL (?pagina=). Por defecto 0.
+	 *               Se fuerza a no ser negativo.
+	 * @param tamano cuántos clientes por página; llega por la URL (?tamano=). Por defecto 10. Se
+	 *               acota al rango [1, 100].
+	 * @return {@code 200 OK} con un {@link PaginaClienteResponse} (los clientes de la página +
+	 *         metadatos de paginación); o {@code 500} si falla la BD.
 	 */
 	@GetMapping("/listar-pagina")
 	public ResponseEntity<PaginaClienteResponse> listarPagina(
