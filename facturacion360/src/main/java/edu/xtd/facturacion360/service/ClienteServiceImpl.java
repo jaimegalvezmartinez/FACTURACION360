@@ -10,7 +10,7 @@ import edu.xtd.facturacion360.repository.ClienteRepository;
 
 @Service
 public class ClienteServiceImpl implements ClienteService{
-	
+
 	@Autowired
 	ClienteRepository clienteRepository;
 
@@ -26,10 +26,15 @@ public class ClienteServiceImpl implements ClienteService{
 		return null;
 	}
 
+	/**
+	 * Crea un cliente delegando la persistencia en el repositorio.
+	 *
+	 * @param cliente datos del cliente que se va a crear
+	 * @return true si el repositorio confirma la inserción; false en caso contrario
+	 */
 	@Override
-	public Cliente crear(Cliente cliente) {
-		// TODO Auto-generated method stub
-		return null;
+	public boolean crear(Cliente cliente) {
+		return clienteRepository.insert(cliente);
 	}
 
 	@Override

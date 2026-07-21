@@ -1,5 +1,6 @@
 package edu.xtd.facturacion360.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,14 +12,20 @@ import edu.xtd.facturacion360.dto.Cliente;
 
 @Repository
 public class ClienteRepositoryJdbcImpl implements ClienteRepository{
-	
+
+
 	//con este objeto, accedemos a base de datos
 	@Autowired
 	JdbcTemplate jdbcTemplate;
-	
-	@Autowired
-	ClienteRowMapper clienteRowMapper;
 
+	ClienteRowMapper clienteRowMapper = new ClienteRowMapper();
+
+	private static final String INSERTAR_CLIENTE = """
+		INSERT INTO clientes (nombre, nif_cif, direccion, codigopostal, poblacion, provincia, telefono, email, fecha_alta)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+		""";
+
+		
 
 	@Override
 	public List<Cliente> findUltimos(int limite) {
@@ -32,10 +39,29 @@ public class ClienteRepositoryJdbcImpl implements ClienteRepository{
 		return Optional.empty();
 	}
 
+	/**
+	 * Inserta un cliente en base de datos.
+	 */
 	@Override
-	public Cliente insert(Cliente cliente) {
-		// TODO Auto-generated method stub
-		return null;
+	public boolean insert(Cliente cliente) {
+		boolean inserccionOk = false;
+
+		int numFilasAfectadas = this.jdbcTemplate.update(INSERTAR_CLIENTE,
+				cliente.nombre(),
+				cliente.nifCif(),
+				cliente.direccion(),
+				cliente.codigoPostal(),
+				cliente.poblacion(),
+				cliente.provincia(),
+				cliente.telefono(),
+				cliente.email(),
+				LocalDate.now());
+
+		if (numFilasAfectadas == 1) {
+			inserccionOk = true;
+		}
+
+		return inserccionOk;
 	}
 
 	@Override

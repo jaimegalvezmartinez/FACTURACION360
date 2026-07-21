@@ -16,7 +16,13 @@ public interface ClienteRepository {
 	
 	public Optional<Cliente> findById (int id);
 	
-	public Cliente insert (Cliente cliente);
+	/**
+	 * Inserta un cliente nuevo en el almacenamiento persistente.
+	 *
+	 * @param cliente datos del cliente que se va a insertar
+	 * @return true si se inserta correctamente; false en caso contrario
+	 */
+	public boolean insert (Cliente cliente);
 	
 	public boolean update (Cliente cliente);
 	
