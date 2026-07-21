@@ -33,11 +33,30 @@ public class ClienteServiceImpl implements ClienteService{
 		return null;
 	}
 
+	
 	@Override
 	public Cliente actualizar(int id, Cliente cliente) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+
+	    // Creamos un nuevo objeto Cliente con el id recibido en la URL
+	    Cliente clienteActualizado = new Cliente(
+	            id,
+	            cliente.nombre(),
+	            cliente.nifCif(),
+	            cliente.direccion(),
+	            cliente.codigoPostal(),
+	            cliente.poblacion(),
+	            cliente.provincia(),
+	            cliente.telefono(),
+	            cliente.email(),
+	            cliente.fechaAlta()
+	    );
+
+	    // Llamamos al repositorio para actualizar el cliente en la base de datos
+	    clienteRepository.update(clienteActualizado);
+
+	    // Devolvemos el cliente actualizado
+	    return clienteActualizado;
+	}     
 
 	@Override
 	public void eliminar(int id) {

@@ -9,18 +9,29 @@ import org.springframework.stereotype.Component;
 import edu.xtd.facturacion360.dto.Cliente;
 
 /**
- * Esta clase, convierte un registro de la base de datos en un Cliente
- * 
- * Con @Component, Spring creará una instancia de esta clase de manera 
- * automática. Hará new ClienteRowMapper (). Inversión de Control IOC
+ * Esta clase convierte un registro de la base de datos en un objeto Cliente.
+ *
+ * Con @Component, Spring crea automáticamente una instancia de esta clase
+ * para poder utilizarla desde el repositorio.
  */
 @Component
-public class ClienteRowMapper implements RowMapper<Cliente>{
+public class ClienteRowMapper implements RowMapper<Cliente> {
 
-	@Override
-	public Cliente mapRow(ResultSet rs, int rowNum) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Cliente mapRow(ResultSet rs, int rowNum) throws SQLException {
+
+        return new Cliente(
+                rs.getInt("idcliente"),
+                rs.getString("nombre"),
+                rs.getString("nif_cif"),
+                rs.getString("direccion"),
+                rs.getString("codigopostal"),
+                rs.getString("poblacion"),
+                rs.getString("provincia"),
+                rs.getString("telefono"),
+                rs.getString("email"),
+                rs.getDate("fecha_alta").toLocalDate()
+        );
+    }
 
 }
