@@ -2,6 +2,7 @@ package edu.xtd.facturacion360.service;
 
 import java.util.List;
 import edu.xtd.facturacion360.dto.Cliente;
+import edu.xtd.facturacion360.dto.PaginaClienteResponse;
 
 
 /**
@@ -11,6 +12,9 @@ import edu.xtd.facturacion360.dto.Cliente;
 public interface ClienteService {
 
 	public List<Cliente> listarUltimos(int limite);
+
+	// Devuelve una página de clientes (con sus metadatos) para la paginación.
+	public PaginaClienteResponse listarPagina(int pagina, int tamano);
 
 	public Cliente obtenerPorId(int id);
 

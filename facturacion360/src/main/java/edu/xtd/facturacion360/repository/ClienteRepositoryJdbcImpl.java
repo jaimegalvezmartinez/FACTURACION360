@@ -56,6 +56,27 @@ public class ClienteRepositoryJdbcImpl implements ClienteRepository {
 	}
 
 	@Override
+	public List<Cliente> findPagina(int tamano, int offset) {
+		// Igual que findUltimos pero con dos '?': LIMIT ? (cuántas filas) y OFFSET ? (cuántas
+		// saltar). Se sustituyen en orden -> primero 'tamano', luego 'offset'. Así traemos solo
+		// la página pedida, no todos los clientes.
+		String sql = "SELECT idcliente, nombre, nif_cif, direccion, codigopostal, poblacion, "
+				+ "provincia, telefono, email, fecha_alta "
+				+ "FROM clientes ORDER BY idcliente DESC LIMIT ? OFFSET ?";
+		List<Cliente> clientes = jdbcTemplate.query(sql, clienteRowMapper, tamano, offset);
+		log.debug("findPagina(tamano={}, offset={}) -> {} filas", tamano, offset, clientes.size());
+		return clientes;
+	}
+
+	@Override
+	public long contarTotal() {
+		// queryForObject: para un SELECT que devuelve UN SOLO valor (aquí el nº total de filas).
+		// Le decimos el tipo esperado (Long.class) para que lo convierta por nosotros.
+		Long total = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM clientes", Long.class);
+		return total != null ? total : 0L;
+	}
+
+	@Override
 	public Optional<Cliente> findById(int id) {
 		// TODO Auto-generated method stub
 		return Optional.empty();

@@ -7,9 +7,12 @@ siguiendo la arquitectura por capas que subió el Val a `master`.
 
 ## Qué hace
 
-- **Endpoint**: `GET /cliente/listar-ultimos` → devuelve los **10 clientes más recientes**
-  como una lista JSON de `ClienteResponse`.
-- **Frontend**: `clientes.js` llama a ese endpoint y pinta cada cliente en la tabla.
+- **Listar paginado**: `GET /cliente/listar-pagina?pagina=0&tamano=10` → devuelve una **página**
+  de clientes (los más recientes primero) + metadatos de paginación, como JSON.
+- **Listar últimos** (endpoint del profe, se mantiene): `GET /cliente/listar-ultimos` → los **10
+  más recientes** en una lista simple.
+- **Frontend**: `clientes.js` pide una página y pinta la tabla; los botones **"Más recientes" /
+  "Más antiguos"** permiten moverse entre páginas.
 
 ## Arquitectura por capas
 
@@ -57,9 +60,26 @@ Navegador ←──────── JSON ─── ClienteResponse ←(Mapper)
 5. **`ClienteController.listarUltimos(limite)`** — valida el `limite` (acotado 1–100), pide al
    service, mapea a `ClienteResponse`, **loguea** el resultado y lo devuelve. Va envuelto en
    `try/catch (DataAccessException)`: si la BD falla, lo registra en el log y devuelve `500`.
-6. **`clientes.js`** — hace `fetch('/cliente/listar-ultimos')`, y por cada cliente clona el
-   `<template>` de la tabla rellenándolo con `textContent` (seguro frente a `<`/`&`). El
-   **buscador** de arriba se ve pero **aún no funciona** (su lógica es de otro compañero).
+6. **`clientes.js`** — pide una página, y por cada cliente clona el `<template>` de la tabla
+   rellenándolo con `textContent` (seguro frente a `<`/`&`). El **buscador** de arriba se ve pero
+   **aún no funciona** (su lógica es de otro compañero).
+
+### Paginación (de N en N)
+
+Además de `listar-ultimos`, añadimos un **endpoint nuevo** `GET /cliente/listar-pagina?pagina=&tamano=`
+(deja `listar-ultimos` intacto). **Idea**: `LIMIT n` = "dame n filas"; `OFFSET m` = "sáltate m". Con
+páginas de 10: página 0 → `OFFSET 0`, página 1 → `OFFSET 10`… (`offset = pagina * tamano`); el
+troceado lo hace MySQL. Las piezas:
+
+- **Repositorio**: `findPagina(tamano, offset)` (`... ORDER BY idcliente DESC LIMIT ? OFFSET ?`) y
+  `contarTotal()` (`SELECT COUNT(*)` con `queryForObject`, que devuelve un único valor).
+- **DTO `PaginaClienteResponse`**: la lista de la página + metadatos (`paginaActual`, `totalPaginas`,
+  `totalElementos`, `hayAnterior`, `haySiguiente`) para que el frontend sepa dónde está.
+- **Service `listarPagina(pagina, tamano)`**: calcula `offset`, el total de páginas con
+  `Math.ceil((double) total / tamano)`, los flags `hayAnterior/haySiguiente`, y mapea a `ClienteResponse`.
+- **Controller `listarPagina`**: mismo patrón (validación, logs, `try/catch`); devuelve el `PaginaClienteResponse`.
+- **`clientes.js`**: guarda la `paginaActual`, pide `/cliente/listar-pagina?pagina=&tamano=10`, pinta
+  `datos.contenido` y **activa/desactiva** los botones "Más recientes"/"Más antiguos" según los flags.
 
 ## Logs y manejo de errores
 
@@ -205,134 +225,3 @@ puede cambiar desde fuera. Con `@RequestParam` ese valor llega por la URL.
   la BD. *(Alternativa más "REST": `@Validated` + `@Min/@Max` devolviendo `400`, pero necesita el
   manejador de errores del TODO B; por eso de momento acotamos.)*
 
----
-
-## Plan detallado: añadir la paginación (método nuevo en el controller)
-
-Ahora `listar-ultimos` devuelve una lista fija de 10, **sin paginación**. Este es el plan, paso a
-paso, para paginar "de N en N" correctamente. **`listar-ultimos` se queda igual**; la paginación va
-en un **endpoint NUEVO** `GET /cliente/listar-pagina`, para no romper lo que ya funciona.
-
-### Idea: cómo pagina la base de datos
-Paginar = pedir los datos **de N en N** en vez de todos de golpe, con dos palabras en el `SELECT`:
-- **`LIMIT n`** → "dame como mucho **n** filas" (el tamaño de página).
-- **`OFFSET m`** → "**sáltate** las primeras **m** filas".
-
-Con páginas de 10: página 0 → `LIMIT 10 OFFSET 0` (filas 1–10); página 1 → `OFFSET 10` (filas
-11–20); página 2 → `OFFSET 20`… La fórmula es **`offset = pagina * tamano`**. El troceado lo hace
-MySQL (no Java), así que es eficiente aunque haya miles de filas.
-
-### Paso 1 — Repositorio (interfaz `ClienteRepository` + `ClienteRepositoryJdbcImpl`)
-Añadir dos métodos, con el mismo estilo que `findUltimos` (variable → log → return):
-```java
-// en la interfaz ClienteRepository:
-List<Cliente> findPagina(int tamano, int offset);
-long contarTotal();
-
-// en ClienteRepositoryJdbcImpl:
-@Override
-public List<Cliente> findPagina(int tamano, int offset) {
-    String sql = "SELECT idcliente, nombre, nif_cif, direccion, codigopostal, poblacion, "
-               + "provincia, telefono, email, fecha_alta "
-               + "FROM clientes ORDER BY idcliente DESC LIMIT ? OFFSET ?";
-    // dos '?': se sustituyen en orden -> primero 'tamano' (LIMIT), luego 'offset' (OFFSET).
-    List<Cliente> clientes = jdbcTemplate.query(sql, clienteRowMapper, tamano, offset);
-    log.debug("findPagina(tamano={}, offset={}) -> {} filas", tamano, offset, clientes.size());
-    return clientes;
-}
-
-@Override
-public long contarTotal() {
-    // queryForObject: para un SELECT que devuelve UN SOLO valor (aquí, el total de filas).
-    Long total = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM clientes", Long.class);
-    return total != null ? total : 0L;
-}
-```
-El `COUNT(*)` hace falta para saber **cuántas páginas hay en total** (si no, no puedes saber si el
-usuario está en la última).
-
-### Paso 2 — DTO de página (nuevo `record` en `dto/`)
-```java
-public record PaginaClienteResponse(
-        List<ClienteResponse> contenido,   // los clientes de ESTA página
-        int paginaActual,
-        int totalPaginas,
-        long totalElementos,
-        boolean hayAnterior,               // ¿existe página anterior?
-        boolean haySiguiente) {}           // ¿existe página siguiente?
-```
-Enviamos esos "metadatos" para que el frontend sepa dónde está y **active/desactive los botones**
-sin recalcular nada por su cuenta.
-
-### Paso 3 — Service (`ClienteService` + `ClienteServiceImpl`)
-Aquí vive el cálculo de la paginación:
-```java
-// interfaz:
-PaginaClienteResponse listarPagina(int pagina, int tamano);
-
-// impl:
-@Override
-public PaginaClienteResponse listarPagina(int pagina, int tamano) {
-    int offset = pagina * tamano;                       // cuántas filas saltar
-    List<Cliente> clientes = clienteRepository.findPagina(tamano, offset);
-    long total = clienteRepository.contarTotal();
-
-    // Math.ceil redondea HACIA ARRIBA: 28/10 = 2,8 -> 3 páginas (la última con 8). El (double)
-    // es clave: sin él la división entera daría 2 y perderías la última página.
-    int totalPaginas = (int) Math.ceil((double) total / tamano);
-
-    List<ClienteResponse> contenido = clientes.stream().map(clienteMapper::toResponse).toList();
-    boolean hayAnterior  = pagina > 0;                  // hay anterior salvo en la página 0
-    boolean haySiguiente = pagina < totalPaginas - 1;   // hay siguiente salvo en la última
-
-    PaginaClienteResponse respuesta = new PaginaClienteResponse(
-            contenido, pagina, totalPaginas, total, hayAnterior, haySiguiente);
-    log.info("listarPagina(pagina={}, tamano={}) -> pagina {}/{}, {} elementos",
-             pagina, tamano, pagina + 1, totalPaginas, total);
-    return respuesta;
-}
-```
-(El service tendría que inyectar también `ClienteMapper`; o, si prefieres, deja el mapeo en el
-controller como en `listar-ultimos`. Elige un sitio y sé consistente.)
-
-### Paso 4 — Controller: MÉTODO NUEVO (no toca `listar-ultimos`)
-Mismo patrón que ya usamos (variable de respuesta + logs + `try/catch`):
-```java
-@GetMapping("/listar-pagina")
-public ResponseEntity<PaginaClienteResponse> listarPagina(
-        @RequestParam(defaultValue = "0")  int pagina,
-        @RequestParam(defaultValue = "10") int tamano) {
-
-    ResponseEntity<PaginaClienteResponse> respuestaHttp = null;
-
-    // Validación: página no negativa y tamaño acotado (evita OFFSET raros o traer demasiado).
-    int paginaSegura = Math.max(0, pagina);
-    int tamanoSeguro = Math.max(1, Math.min(100, tamano));
-    log.info("GET /cliente/listar-pagina?pagina={}&tamano={}", paginaSegura, tamanoSeguro);
-
-    try {
-        PaginaClienteResponse pagina = clienteService.listarPagina(paginaSegura, tamanoSeguro);
-        respuestaHttp = ResponseEntity.ok(pagina);
-    } catch (DataAccessException e) {
-        log.error("Error al listar la pagina de clientes", e);
-        respuestaHttp = ResponseEntity.internalServerError().build();
-    }
-    return respuestaHttp;
-}
-```
-
-### Paso 5 — Frontend (`clientes.html` + `clientes.js`)
-1. En el HTML, añadir una **barra de paginación**: dos botones ("◀ Anterior" / "Siguiente ▶") y un
-   texto tipo "Página 2 de 3".
-2. En el JS: guardar la `paginaActual`; hacer
-   `fetch('/cliente/listar-pagina?pagina=' + p + '&tamano=10')`; pintar `datos.contenido` con la
-   misma función `pintarFilas`; y **desactivar** "Anterior" si `!datos.hayAnterior` y "Siguiente" si
-   `!datos.haySiguiente`, para que el usuario nunca se salga del rango.
-
-### Notas importantes
-- Mantener **siempre `ORDER BY idcliente DESC`**: sin un orden estable la paginación puede
-  **repetir o saltarse** filas entre páginas.
-- Cubrir **casos borde**: 0 resultados, última página incompleta, página fuera de rango.
-- Esto **amplía la interfaz del profe** (métodos nuevos en el repositorio) → **acordarlo con él**.
-- **Alternativa** (solo con muy pocos clientes): traerlos todos y paginar en el navegador con
-  `array.slice()`; más simple pero **no escala** (carga todo en memoria).

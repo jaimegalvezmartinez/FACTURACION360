@@ -23,6 +23,7 @@ import edu.xtd.facturacion360.dto.Cliente;
 import edu.xtd.facturacion360.dto.ClienteMapper;
 import edu.xtd.facturacion360.dto.ClienteRequest;
 import edu.xtd.facturacion360.dto.ClienteResponse;
+import edu.xtd.facturacion360.dto.PaginaClienteResponse;
 import edu.xtd.facturacion360.service.ClienteService;
 import jakarta.validation.Valid;
 
@@ -87,6 +88,36 @@ public class ClienteController {
 		} catch (DataAccessException e) {
 			// 4) Fallo hablando con la BD: lo registramos en el log y devolvemos 500.
 			log.error("Error al listar los ultimos clientes", e);
+			respuestaHttp = ResponseEntity.internalServerError().build();
+		}
+
+		return respuestaHttp;
+	}
+
+	/**
+	 * Devuelve una PÁGINA de clientes (para la paginación de la tabla).
+	 * URL: /cliente/listar-pagina?pagina=0&tamano=10  (los dos parámetros son opcionales).
+	 * No toca a listar-ultimos; es un endpoint aparte.
+	 */
+	@GetMapping("/listar-pagina")
+	public ResponseEntity<PaginaClienteResponse> listarPagina(
+			@RequestParam(defaultValue = "0")  int pagina,
+			@RequestParam(defaultValue = "10") int tamano) {
+
+		ResponseEntity<PaginaClienteResponse> respuestaHttp = null;
+
+		// Validación: la página no puede ser negativa y el tamaño lo acotamos a [1, 100]
+		// (evita OFFSET raros o pedir demasiadas filas de golpe).
+		int paginaSegura = Math.max(0, pagina);
+		int tamanoSeguro = Math.max(LIMITE_MIN, Math.min(LIMITE_MAX, tamano));
+		log.info("GET /cliente/listar-pagina?pagina={}&tamano={}", paginaSegura, tamanoSeguro);
+
+		try {
+			// El service trae la página y ya calcula los metadatos (total, hayAnterior, etc.).
+			PaginaClienteResponse pagina2 = clienteService.listarPagina(paginaSegura, tamanoSeguro);
+			respuestaHttp = ResponseEntity.ok(pagina2);
+		} catch (DataAccessException e) {
+			log.error("Error al listar la pagina de clientes", e);
 			respuestaHttp = ResponseEntity.internalServerError().build();
 		}
 

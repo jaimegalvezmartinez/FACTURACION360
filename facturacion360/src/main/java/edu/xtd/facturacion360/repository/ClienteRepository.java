@@ -13,7 +13,13 @@ import edu.xtd.facturacion360.dto.Cliente;
 public interface ClienteRepository {
 	
 	public List<Cliente> findUltimos (int limite);
-	
+
+	// Paginación: 'tamano' filas saltando las primeras 'offset' (LIMIT ? OFFSET ?).
+	public List<Cliente> findPagina (int tamano, int offset);
+
+	// Total de clientes en la tabla (para calcular cuántas páginas hay).
+	public long contarTotal ();
+
 	public Optional<Cliente> findById (int id);
 	
 	public Cliente insert (Cliente cliente);
