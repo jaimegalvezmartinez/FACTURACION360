@@ -23,7 +23,7 @@ public class ClienteRowMapper implements RowMapper<Cliente>{
 		
 		java.sql.Date fechaAlta = rs.getDate("fecha_alta");
 		return new Cliente(
-				rs.getInt("id_cliente"),
+				rs.getInt("idcliente"),
 				rs.getString("nombre"),
 				rs.getString("nif_cif"),
 				rs.getString("direccion"),
