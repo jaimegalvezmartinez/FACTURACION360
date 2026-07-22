@@ -23,17 +23,26 @@ public class ClienteRepositoryJdbcImpl implements ClienteRepository {
 	@Autowired
 	JdbcTemplate jdbcTemplate;
 
-	ClienteRowMapper clienteRowMapper = new ClienteRowMapper();
+
 
 	private static final String INSERTAR_CLIENTE = """
 			INSERT INTO clientes (nombre, nif_cif, direccion, codigopostal, poblacion, provincia, telefono, email, fecha_alta)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 			""";
 
+
+	@Autowired
+	ClienteRowMapper clienteRowMapper;
+
+
 	@Override
 	public List<Cliente> findUltimos(int limite) {
-		// TODO Auto-generated method stub
-		return null;
+		// Los 'limite' clientes dados de alta más recientemente: id más alto primero.
+		// El troceado (LIMIT) lo hace MySQL, no Java. El '?' evita inyección SQL.
+		String sql = "SELECT idcliente, nombre, nif_cif, direccion, codigopostal, "
+				+ "poblacion, provincia, telefono, email, fecha_alta "
+				+ "FROM clientes ORDER BY idcliente DESC LIMIT ?";
+		return jdbcTemplate.query(sql, clienteRowMapper, limite);
 	}
 
 	@Override
@@ -106,8 +115,15 @@ public class ClienteRepositoryJdbcImpl implements ClienteRepository {
 
 	@Override
 	public boolean deleteById(int id) {
-		// TODO Auto-generated method stub
-		return false;
+		boolean borrarOk = false;
+		String instruccionBorrar = "DELETE FROM clientes where idcliente = ?;";
+		
+			int filasborradas = jdbcTemplate.update(instruccionBorrar, id);
+			if (filasborradas == 1) {
+				borrarOk = true;
+			}
+
+		return borrarOk;
 	}
 
 }

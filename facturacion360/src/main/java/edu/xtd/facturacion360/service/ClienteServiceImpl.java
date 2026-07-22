@@ -16,8 +16,8 @@ public class ClienteServiceImpl implements ClienteService{
 
 	@Override
 	public List<Cliente> listarUltimos(int limite) {
-		// TODO Auto-generated method stub
-		return null;
+		// La regla de negocio ("los últimos N") delega en el repositorio.
+		return clienteRepository.findUltimos(limite);
 	}
 
 	@Override
@@ -53,8 +53,8 @@ public class ClienteServiceImpl implements ClienteService{
 
 	@Override
 	public void eliminar(int id) {
-		// TODO Auto-generated method stub
 		
+		this.clienteRepository.deleteById(id);
 	}
 	
 	//TODO: valorar la programación del método privado validarCifUnico mirar el Diagrama de Clases

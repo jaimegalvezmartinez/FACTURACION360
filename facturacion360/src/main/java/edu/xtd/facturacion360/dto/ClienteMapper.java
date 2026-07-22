@@ -1,13 +1,16 @@
 package edu.xtd.facturacion360.dto;
 
+
+import org.springframework.stereotype.Component;
+
 /**
- * Traduce entre los DTOs web de cliente y el modelo interno de la aplicación.
+ * Traduce entre los distintos objetos de Cliente.
+ * Con @Component Spring lo crea y lo inyecta donde haga falta (p. ej. en el controller).
  */
+@Component
 public class ClienteMapper {
 
-	/**
-	 * Convierte una petición HTTP en un cliente de dominio pendiente de persistir.
-	 */
+	// toDomain (Request -> Cliente) lo necesitan crear/actualizar: lo dejará el compañero.
 	public Cliente toDomain(ClienteRequest clienteRequest) {
 		Cliente cliente = null;
 			
@@ -28,9 +31,6 @@ public class ClienteMapper {
 		return cliente;
 	}
 
-	/**
-	 * Convierte un cliente de dominio en el DTO expuesto por la API REST.
-	 */
 	public ClienteResponse toResponse (Cliente cliente)
 	{
 		ClienteResponse clienteResponse = null;
